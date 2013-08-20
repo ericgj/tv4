@@ -6,34 +6,35 @@ ValidatorContext.prototype.validateArray = function validateArray(data, schema) 
 		|| this.validateArrayUniqueItems(data, schema)
 		|| this.validateArrayItems(data, schema)
 		|| null;
-}
+};
 
 ValidatorContext.prototype.validateArrayLength = function validateArrayLength(data, schema) {
-	if (schema.minItems != undefined) {
+	var error;
+	if (schema.minItems !== undefined) {
 		if (data.length < schema.minItems) {
-			var error = (new ValidationError(ErrorCodes.ARRAY_LENGTH_SHORT, "Array is too short (" + data.length + "), minimum " + schema.minItems)).prefixWith(null, "minItems");
+			error = (this.createError(ErrorCodes.ARRAY_LENGTH_SHORT, {length: data.length, minimum: schema.minItems})).prefixWith(null, "minItems");
 			if (this.handleError(error)) {
 				return error;
 			}
 		}
 	}
-	if (schema.maxItems != undefined) {
+	if (schema.maxItems !== undefined) {
 		if (data.length > schema.maxItems) {
-			var error = (new ValidationError(ErrorCodes.ARRAY_LENGTH_LONG, "Array is too long (" + data.length + " chars), maximum " + schema.maxItems)).prefixWith(null, "maxItems");
+			error = (this.createError(ErrorCodes.ARRAY_LENGTH_LONG, {length: data.length, maximum: schema.maxItems})).prefixWith(null, "maxItems");
 			if (this.handleError(error)) {
 				return error;
 			}
 		}
 	}
 	return null;
-}
+};
 
 ValidatorContext.prototype.validateArrayUniqueItems = function validateArrayUniqueItems(data, schema) {
 	if (schema.uniqueItems) {
 		for (var i = 0; i < data.length; i++) {
 			for (var j = i + 1; j < data.length; j++) {
 				if (recursiveCompare(data[i], data[j])) {
-					var error = (new ValidationError(ErrorCodes.ARRAY_UNIQUE, "Array items are not unique (indices " + i + " and " + j + ")")).prefixWith(null, "uniqueItems");
+					var error = (this.createError(ErrorCodes.ARRAY_UNIQUE, {match1: i, match2: j})).prefixWith(null, "uniqueItems");
 					if (this.handleError(error)) {
 						return error;
 					}
@@ -42,23 +43,23 @@ ValidatorContext.prototype.validateArrayUniqueItems = function validateArrayUniq
 		}
 	}
 	return null;
-}
+};
 
 ValidatorContext.prototype.validateArrayItems = function validateArrayItems(data, schema) {
-	if (schema.items == undefined) {
+	if (schema.items === undefined) {
 		return null;
 	}
-	var error;
+	var error, i;
 	if (Array.isArray(schema.items)) {
-		for (var i = 0; i < data.length; i++) {
+		for (i = 0; i < data.length; i++) {
 			if (i < schema.items.length) {
 				if (error = this.validateAll(data[i], schema.items[i], [i], ["items", i])) {
 					return error;
 				}
-			} else if (schema.additionalItems != undefined) {
-				if (typeof schema.additionalItems == "boolean") {
+			} else if (schema.additionalItems !== undefined) {
+				if (typeof schema.additionalItems === "boolean") {
 					if (!schema.additionalItems) {
-						error = (new ValidationError(ErrorCodes.ARRAY_ADDITIONAL_ITEMS, "Additional items not allowed")).prefixWith("" + i, "additionalItems");
+						error = (this.createError(ErrorCodes.ARRAY_ADDITIONAL_ITEMS, {})).prefixWith("" + i, "additionalItems");
 						if (this.handleError(error)) {
 							return error;
 						}
@@ -69,11 +70,11 @@ ValidatorContext.prototype.validateArrayItems = function validateArrayItems(data
 			}
 		}
 	} else {
-		for (var i = 0; i < data.length; i++) {
+		for (i = 0; i < data.length; i++) {
 			if (error = this.validateAll(data[i], schema.items, [i], ["items"])) {
 				return error;
 			}
 		}
 	}
 	return null;
-}
+};
